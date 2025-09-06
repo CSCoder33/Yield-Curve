@@ -29,3 +29,9 @@ If enough rows are present for PCA, you’ll also get:
 
 Tip: The script also saves a dated image like `curves_YYYY-MM-DD.png`.
 `curves_latest.png` always points to the newest run for the README.
+
+## Development
+
+- `make run`: regenerate figures by running the PCA script.
+- `make update`: regenerate, commit updated figures, and push to GitHub.
+- `make clean`: remove `reports/figures/curves_latest.png` locally.
