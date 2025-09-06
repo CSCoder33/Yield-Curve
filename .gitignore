@@ -6,6 +6,7 @@
 !Yield Curve PCA.py
 !data/
 !data/treasury_yields.csv
+!README.md
 
 # Allow reports and generated figures
 !reports/
