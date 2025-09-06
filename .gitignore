@@ -8,6 +8,9 @@
 !data/treasury_yields.csv
 !README.md
 !Makefile
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml
 
 # Allow reports and generated figures
 !reports/
