@@ -21,13 +21,11 @@ Figures will be saved under `reports/figures/`.
 
 Latest curves vs observed par points:
 
-![Yield Curves](reports/figures/curves_2024-01-02.png)
+![Yield Curves](reports/figures/curves_latest.png)
 
 If enough rows are present for PCA, you’ll also get:
 
 `reports/figures/pca_loadings.png`
 
-Tip: Each run saves the curve image with the last date in the filename.
-If you want the README to always show the newest image, update the link
-above after running and committing the new file.
-
+Tip: The script also saves a dated image like `curves_YYYY-MM-DD.png`.
+`curves_latest.png` always points to the newest run for the README.

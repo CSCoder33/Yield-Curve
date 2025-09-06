@@ -406,11 +406,14 @@ def main(start: Optional[str] = None, end: Optional[str] = None) -> None:
     # Plot curves vs observed par points
     if HAS_MPL:
         curves_path = os.path.join("reports/figures", f"curves_{last_date.date()}.png")
+        curves_latest_path = os.path.join("reports/figures", "curves_latest.png")
         # Interpolate zero/fwd to observed maturities for an apples-to-apples plot
         par_mats = y_last.index.values.astype(float)
         zero_obs = np.interp(par_mats, zero_curve.index.values, zero_curve.values)
         fwd_obs = np.interp(par_mats, fwd_curve.index.values, fwd_curve.values)
         plot_curves(str(last_date.date()), par_mats, y_last.values, zero_obs, fwd_obs, curves_path)
+        # Also write a stable filename for README embedding
+        plot_curves(str(last_date.date()), par_mats, y_last.values, zero_obs, fwd_obs, curves_latest_path)
 
     # PCA on de-meaned yields (in %)
     try:
@@ -461,6 +464,7 @@ def main(start: Optional[str] = None, end: Optional[str] = None) -> None:
     if HAS_MPL:
         print("Figures saved:")
         print(f" - reports/figures/curves_{last_date.date()}.png")
+        print(" - reports/figures/curves_latest.png")
         if pca_res is not None:
             print(" - reports/figures/pca_loadings.png")
 
@@ -468,4 +472,3 @@ def main(start: Optional[str] = None, end: Optional[str] = None) -> None:
 if __name__ == "__main__":
     # Optional: set narrower window by passing start/end
     main()
-
