@@ -7,5 +7,10 @@
 !data/
 !data/treasury_yields.csv
 
+# Allow reports and generated figures
+!reports/
+!reports/figures/
+!reports/figures/*.png
+
 # OS cruft
 .DS_Store
