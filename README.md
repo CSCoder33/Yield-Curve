@@ -1,5 +1,7 @@
 # Yield Curve PCA
 
+[![Update Figures](https://github.com/CSCoder33/Yield-Curve/actions/workflows/update-figures.yml/badge.svg)](https://github.com/CSCoder33/Yield-Curve/actions/workflows/update-figures.yml)
+
 Simple analysis of U.S. Treasury constant-maturity yields:
 - Fits a Nelson–Siegel curve to the latest date.
 - Builds zero and forward curves and saves a comparison plot.
