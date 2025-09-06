@@ -1,0 +1,14 @@
+# Ignore everything by default
+*
+
+# But keep these files/paths tracked
+!.gitignore
+!Yield Curve PCA.py
+!data/
+
+# Within data, ignore all by default then allow the CSV
+/data/*
+!data/treasury_yields.csv
+
+# Common OS cruft
+.DS_Store
