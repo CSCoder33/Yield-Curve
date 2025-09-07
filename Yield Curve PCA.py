@@ -7,6 +7,9 @@ import pandas as pd
 
 
 try:
+    # Force a non-interactive backend for headless environments (CI)
+    import matplotlib
+    matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     HAS_MPL = True
 except Exception:
