@@ -37,22 +37,63 @@ FRED_SERIES = {
 
 
 def _try_fetch_from_fred(start: Optional[str] = None, end: Optional[str] = None) -> Optional[pd.DataFrame]:
-    """Attempt to fetch FRED yields via pandas_datareader if installed and network allowed.
+    """Fetch FRED yields.
+    Strategy:
+      1) Try pandas_datareader (if compatible)
+      2) Fallback to direct CSV download from fredgraph (no API key)
     Returns DataFrame with columns as float maturities (years) in % yields.
     """
+    # 1) pandas_datareader path
     try:
-        from pandas_datareader import data as pdr
+        from pandas_datareader import data as pdr  # type: ignore
+        try:
+            df_list = []
+            for mat, code in FRED_SERIES.items():
+                s = pdr.DataReader(code, "fred", start=start, end=end)
+                s.rename(columns={code: mat}, inplace=True)
+                df_list.append(s)
+            df = pd.concat(df_list, axis=1).sort_index()
+            return df
+        except Exception:
+            pass
     except Exception:
-        return None
+        pass
 
+    # 2) Direct CSV download from fredgraph
     try:
-        df_list = []
+        import io
+        import requests
+        params_common = {}
+        if start:
+            params_common["cosd"] = start
+        if end:
+            params_common["coed"] = end
+        frames = []
         for mat, code in FRED_SERIES.items():
-            s = pdr.DataReader(code, "fred", start=start, end=end)
-            s.rename(columns={code: mat}, inplace=True)
-            df_list.append(s)
-        df = pd.concat(df_list, axis=1).sort_index()
-        return df
+            url = "https://fred.stlouisfed.org/graph/fredgraph.csv"
+            params = {"id": code, **params_common}
+            r = requests.get(url, params=params, timeout=20)
+            if r.status_code != 200 or not r.text:
+                return None
+            df = pd.read_csv(io.StringIO(r.text))
+            # Normalize: FRED uses either 'DATE' or 'observation_date'
+            date_col = None
+            for cand in ("DATE", "observation_date", "date", "Date"):
+                if cand in df.columns:
+                    date_col = cand
+                    break
+            if date_col is None:
+                return None
+            df.rename(columns={date_col: "Date", code: str(mat)}, inplace=True)
+            df["Date"] = pd.to_datetime(df["Date"]) 
+            # Convert to numeric, coerce missing '.' to NaN
+            df[str(mat)] = pd.to_numeric(df[str(mat)], errors="coerce")
+            df.set_index("Date", inplace=True)
+            frames.append(df[[str(mat)]])
+        out = pd.concat(frames, axis=1).sort_index()
+        # Columns as float maturities
+        out.columns = [float(c) for c in out.columns]
+        return out
     except Exception:
         return None
 
@@ -137,18 +178,69 @@ def _try_read_local_csv(path: str = "data/treasury_yields.csv") -> Optional[pd.D
     return out
 
 
-def load_treasury_yields(start: Optional[str] = None, end: Optional[str] = None) -> pd.DataFrame:
+def load_treasury_yields(
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    auto_update_local: bool = True,
+) -> pd.DataFrame:
     """Load constant maturity Treasury yields into a wide DataFrame (columns=maturities in years).
-    Values are in percent. Prefers local CSV if present; otherwise attempts FRED.
+    Values are in percent. If a local CSV exists, use it; if it's stale and network is
+    available, attempt to fetch missing dates from FRED and append, writing back to CSV.
+    Otherwise, fall back to fetching the full history from FRED.
     """
-    # 1) Local CSV
+    ensure_dirs()
+
+    # 1) Try local CSV
     df_local = _try_read_local_csv()
     if df_local is not None:
+        if auto_update_local:
+            # If stale, try to update with FRED and write back
+            try:
+                last_local = df_local.index.max()
+                # If end not provided, try through today
+                tgt_end = pd.to_datetime(end) if end is not None else pd.Timestamp.today().normalize()
+                # If we are missing at least one business day, try to fetch
+                if pd.isna(last_local) or (last_local.date() < (tgt_end.date())):
+                    fetch_start = (last_local + pd.Timedelta(days=1)).date() if pd.notna(last_local) else None
+                    df_new = _try_fetch_from_fred(start=str(fetch_start) if fetch_start else start, end=end)
+                    if df_new is not None and not df_new.empty:
+                        # Standardize columns as maturities to match local
+                        df_new.columns = [float(c) for c in df_new.columns]
+                        # Align and append only newer rows
+                        df_upd = pd.concat([df_local, df_new], axis=0)
+                        df_upd = df_upd[sorted(set(df_upd.columns) | set(FRED_SERIES.keys()))]
+                        df_upd = df_upd[sorted(df_upd.columns)]
+                        df_upd = df_upd[~df_upd.index.duplicated(keep="last")].sort_index()
+                        # Write back to CSV in the original labeled format
+                        # Recreate a friendly header using FRED codes where available
+                        inv_map = {k: v for k, v in FRED_SERIES.items()}
+                        cols = []
+                        for c in df_upd.columns:
+                            cols.append(inv_map.get(float(c), str(c)))
+                        tmp = df_upd.copy()
+                        tmp.columns = cols
+                        out_path = os.path.join("data", "treasury_yields.csv")
+                        # Save with Date index label
+                        tmp.to_csv(out_path, index_label="Date")
+                        df_local = df_upd
+            except Exception:
+                # Non-fatal; just use local as-is
+                pass
         return df_local
 
     # 2) FRED via pandas_datareader
     df_fred = _try_fetch_from_fred(start=start, end=end)
     if df_fred is not None:
+        # Save a copy locally for next runs
+        try:
+            ensure_dirs()
+            tmp = df_fred.copy()
+            # Convert column names to FRED codes for readability
+            cols = [FRED_SERIES.get(float(c), str(c)) for c in tmp.columns]
+            tmp.columns = cols
+            tmp.to_csv(os.path.join("data", "treasury_yields.csv"), index_label="Date")
+        except Exception:
+            pass
         return df_fred
 
     # 3) No data available
