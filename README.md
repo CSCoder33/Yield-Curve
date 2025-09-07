@@ -31,7 +31,7 @@ Figures will be saved under `reports/figures/`.
 
 Latest curves vs observed par points:
 
-![Yield Curves](reports/figures/curves_2025-09-04.png)
+![Yield Curves](reports/figures/curves_latest.png)
 
 If enough rows are present for PCA, you’ll also get:
 
