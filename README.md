@@ -1,6 +1,6 @@
 # Yield Curve PCA
 
-[![Update Figures](https://github.com/CSCoder33/Yield-Curve/actions/workflows/update-figures.yml/badge.svg)](https://github.com/CSCoder33/Yield-Curve/actions/workflows/update-figures.yml)
+[![Update Curves](https://github.com/CSCoder33/Yield-Curve/actions/workflows/update-curves.yml/badge.svg)](https://github.com/CSCoder33/Yield-Curve/actions/workflows/update-curves.yml)
 
 Simple analysis of U.S. Treasury constant-maturity yields:
 - Fits a Nelson–Siegel curve to the latest date.
@@ -31,7 +31,7 @@ Figures will be saved under `reports/figures/`.
 
 Latest curves vs observed par points:
 
-![Yield Curves](reports/figures/curves_latest.png)
+![Yield Curves](reports/figures/curves_2025-09-04.png)
 
 If enough rows are present for PCA, you’ll also get:
 

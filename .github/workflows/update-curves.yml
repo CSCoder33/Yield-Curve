@@ -31,16 +31,21 @@ jobs:
       - name: Regenerate curves and figures
         run: |
           python "Yield Curve PCA.py"
+      
+      - name: Update README to latest dated image
+        run: |
+          latest=$(ls -1 reports/figures/curves_*.png | sort | tail -n1)
+          base=$(basename "$latest")
+          sed -i -E "s|reports/figures/(curves_latest|curves_[0-9]{4}-[0-9]{2}-[0-9]{2}).png|reports/figures/${base}|g" README.md
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/treasury_yields.csv reports/figures/*.png || true
+          git add data/treasury_yields.csv reports/figures/*.png README.md || true
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
             git commit -m "chore: auto-update curves [skip ci]"
             git push
           fi
-
